@@ -99,7 +99,7 @@ class TodosManager:
             self._todos[message.message_id] = TodoData.from_single_lined_message(message)
         
         if self._todos[message.message_id].marker == new_marker:
-            return
+            new_marker = None
 
         self._todos[message.message_id].marker = new_marker
         bot.edit_message_text(

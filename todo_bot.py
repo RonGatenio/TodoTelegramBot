@@ -67,12 +67,15 @@ def _list_x_command_handler(update, context):
     _list_todos(update, context, Markers.X)
 
 
+def _message_handler2(update, context):
+    print(update.effective_message.text)
+
 def _error_handler(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 
-def run(api_token, presistence_storage_filename='todobot.dat'):
+def run(api_token, presistence_storage_filename='todobot.dat', mode='dev'):
     # Create the Updater and pass it your bot's token.
     pp = PicklePersistence(filename=presistence_storage_filename)
     updater = Updater(api_token, persistence=pp, use_context=True)
@@ -83,13 +86,23 @@ def run(api_token, presistence_storage_filename='todobot.dat'):
     updater.dispatcher.add_handler(CommandHandler('list_x', _list_x_command_handler))
     
     updater.dispatcher.add_handler(MessageHandler(Filters.regex(TODO_LIST_START_REGEX), _message_handler))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex(Markers.V), _message_handler2))
     updater.dispatcher.add_handler(CallbackQueryHandler(_keyboard_click_handler))
 
     updater.dispatcher.add_error_handler(_error_handler)
 
-    # Start the Bot
-    updater.start_polling()
+    if mode == 'dev':
+        # Start the Bot
+        updater.start_polling()
 
-    # Run the bot until the user presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT
-    updater.idle()
+        # Run the bot until the user presses Ctrl-C or the process receives SIGINT,
+        # SIGTERM or SIGABRT
+        updater.idle()
+    else:
+        import config
+        updater.start_webhook(
+            listen='0.0.0.0',
+            port=config.WEBHOOK_PORT,
+            url_path=api_token,
+        )
+        updater.bot.set_webhook('https://{}.herokuapp.com/{}'.format(config.HEROKU_APP_NAME, api_token))
