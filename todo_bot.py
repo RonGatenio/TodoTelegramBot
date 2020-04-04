@@ -1,12 +1,7 @@
 import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, PicklePersistence
-from telegram import InlineQueryResultArticle, InputTextMessageContent
-from telegram.ext import InlineQueryHandler
 from telegram.ext.filters import Filters
-from telegram import ParseMode
-
-from context_manager import add_new_message, get_messages_by_marker, remove_messages_by_marker, get_messages, set_message_marker
+from todo_data import TodosManager, TODO_LIST_START_REGEX, Markers
 
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -14,67 +9,62 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-class Markers:
-    V = "✔"
-    X = "❌"
-
-def make_inline_keyboard(*buttons):
-    return InlineKeyboardMarkup([[InlineKeyboardButton(button, callback_data=button) for button in buttons]])
-
-INLINE_KEYBOARD = make_inline_keyboard(Markers.V, Markers.X)
+def _get_todos_manager(context) -> TodosManager:
+    if 'todos_manager' not in context.chat_data:
+        context.chat_data['todos_manager'] = TodosManager()
+    return context.chat_data['todos_manager']
 
 
 def _message_handler(update, context):
-    message = update.effective_message
+    todos_manager = _get_todos_manager(context)
 
-    from pprint import pprint
-    try:
-        pprint(update.to_dict())
-    except:
-        pprint(update)
-
-    message.delete()
-
-    for line in message.text.splitlines():
-        item_text = line.replace('-', '').strip()
-
-        m = context.bot.send_message(message.chat_id, item_text, reply_markup=INLINE_KEYBOARD)
-        add_new_message(context, m.message_id, item_text)
+    todos_manager.create_todos_from_message(context.bot, update.effective_message)
 
 
 def _clean_command_handler(update, context):
-    message = update.message
+    todos_manager = _get_todos_manager(context)
+
+    message = update.effective_message
     message.delete()
 
-    for message_id in get_messages_by_marker(context, Markers.V):
-        context.bot.delete_message(message.chat_id, message_id)
-
-    remove_messages_by_marker(context, Markers.V)
+    for message_id in todos_manager.get_todos_by_marker(Markers.V):
+        del todos_manager.todos[message_id]
+        try:
+            context.bot.delete_message(message.chat_id, message_id)
+        except:
+            logger.exception("Can't delete message")
 
 
 def _keyboard_click_handler(update, context):
+    todos_manager = _get_todos_manager(context)
+
     query = update.callback_query
 
     # CallbackQueries need to be answered, even if no notification to the user is needed
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     query.answer()
 
-    message = query.message
+    todos_manager.update_todo(context.bot, update.effective_message, query.data)
 
-    if message.message_id not in get_messages(context):
-        return
-    message_data = get_messages(context)[message.message_id]
-    
-    if message_data.marker == query.data:
-        return
 
-    if query.data == Markers.V:
-        txt = '{} ~{}~'.format(Markers.V, message_data.text)
-    elif query.data == Markers.X:
-        txt = '{} {}'.format(Markers.X, message_data.text)
-    query.edit_message_text(txt, parse_mode=ParseMode.MARKDOWN_V2, reply_markup=INLINE_KEYBOARD)
-    
-    set_message_marker(context, message.message_id, query.data)
+def _list_todos(update, context, marker):
+    update.effective_message.delete()
+    todos_manager = _get_todos_manager(context)
+    message = '\n'.join([todo.text for todo in todos_manager.get_todos_by_marker(marker).values()])
+    if message:
+        context.bot.send_message(update.effective_message.chat_id, message)
+
+
+def _list_command_handler(update, context):
+    _list_todos(update, context, None)
+
+
+def _list_v_command_handler(update, context):
+    _list_todos(update, context, Markers.V)
+
+
+def _list_x_command_handler(update, context):
+    _list_todos(update, context, Markers.X)
 
 
 def _error_handler(update, context):
@@ -88,11 +78,11 @@ def run(api_token, presistence_storage_filename='todobot.dat'):
     updater = Updater(api_token, persistence=pp, use_context=True)
 
     updater.dispatcher.add_handler(CommandHandler('clean', _clean_command_handler))
-    updater.dispatcher.add_handler(CommandHandler('list', _clean_command_handler))
-    updater.dispatcher.add_handler(CommandHandler('list_x', _clean_command_handler))
-    updater.dispatcher.add_handler(CommandHandler('list_v', _clean_command_handler))
+    updater.dispatcher.add_handler(CommandHandler('list', _list_command_handler))
+    updater.dispatcher.add_handler(CommandHandler('list_v', _list_v_command_handler))
+    updater.dispatcher.add_handler(CommandHandler('list_x', _list_x_command_handler))
     
-    updater.dispatcher.add_handler(MessageHandler(Filters.regex(r'^-'), _message_handler))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex(TODO_LIST_START_REGEX), _message_handler))
     updater.dispatcher.add_handler(CallbackQueryHandler(_keyboard_click_handler))
 
     updater.dispatcher.add_error_handler(_error_handler)
