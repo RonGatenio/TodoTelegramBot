@@ -32,6 +32,8 @@ Click on them to mark the todo\.
 *TodoBot Commands*
 /start \- Shows the start message\.
 /help \- Shows this message\.
+
+I'm also on [GitHub](https://github.com/RonGatenio/TodoTelegramBot)
 """.format(TodoState.V, TodoState.X)
 
 
