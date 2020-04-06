@@ -2,6 +2,6 @@
 
 Add TODOs to any telegram chat.
 
-![](/screenshots/img1.png)
-![](/screenshots/img2.png)
-![](/screenshots/img3.png)
+<p align="center">
+  <img src="/screenshots/img1.png" width="280"/> <img src="/screenshots/img2.png" width="280"/> <img src="/screenshots/img3.png" width="280"/>
+ </p>
