@@ -11,6 +11,29 @@ LOGGER = init_logger(__name__)
 
 INLINE_KEYBOARD = make_inline_keyboard(TodoState.V, TodoState.X)
 
+START_MESSAGE = \
+"""
+I'm the *TodoBot*
+
+Add TODOs and have fun\!
+
+For help: /help
+"""
+
+HELP_MESSAGE = \
+"""
+*TodoBot Help*
+To add a TODO, start a message with '\-'\.
+The message can have multiple lines\. Each line will turn into a separated TODO\.
+
+Todos are given an inline keyboard with 2 options: {} {}\.
+Click on them to mark the todo\.
+
+*TodoBot Commands*
+/start \- Shows the start message\.
+/help \- Shows this message\.
+""".format(TodoState.V, TodoState.X)
+
 
 def _todo_list_message_handler(update, context):
     message = update.effective_message
@@ -56,7 +79,8 @@ def _start_command_handler(update, context):
 
     context.bot.send_message(
         message.chat_id, 
-        'START'
+        START_MESSAGE,
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
 
 
@@ -65,7 +89,8 @@ def _help_command_handler(update, context):
 
     context.bot.send_message(
         message.chat_id, 
-        'HELP'
+        HELP_MESSAGE,
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
 
 
