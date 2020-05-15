@@ -24,7 +24,7 @@ _CHARATERS_TO_REMOVE = [
 
 class Todo:
     def __init__(self, text, state=None):
-        self._text = text
+        self._text = re.escape(text)
         self._state = state
 
     @classmethod
