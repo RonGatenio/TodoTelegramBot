@@ -8,7 +8,7 @@ class TodoState(SimpleEnum):
 
 _TODO_STATE_FORMAT = {
     None: '{}',
-    TodoState.V: '{} ~{{}}~'.format(TodoState.V),
+    TodoState.V: '{} <s>{{}}</s>'.format(TodoState.V),
     TodoState.X: '{} {{}}'.format(TodoState.X),
 }
 
@@ -24,7 +24,7 @@ _CHARATERS_TO_REMOVE = [
 
 class Todo:
     def __init__(self, text, state=None):
-        self._text = re.escape(text)
+        self._text = text
         self._state = state
 
     @classmethod

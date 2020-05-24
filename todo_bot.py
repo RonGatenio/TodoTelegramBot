@@ -71,7 +71,7 @@ def _keyboard_click_handler(update, context):
 
     query.edit_message_text(
         str(todo),
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.HTML,
         reply_markup=INLINE_KEYBOARD,
     )
 
