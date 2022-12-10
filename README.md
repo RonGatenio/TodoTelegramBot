@@ -9,7 +9,7 @@ Add TODOs to any telegram chat.
 ## Run in gcloud
 create a Google Cloud Function running this command in the same line:
 ```
-gcloud functions deploy telegram_bot --set-env-vars "TELEGRAM_API_TOKEN=<TELEGRAM_API_TOKEN>" --runtime python38 --trigger-http --project=<project_name>
+gcloud functions deploy run_gcloud_webhook --set-env-vars "TELEGRAM_API_TOKEN=<TELEGRAM_API_TOKEN>" --runtime python38 --trigger-http --project=<project_name>
 ```
 you can also specify the region by appending the following string to the previous command
 ```

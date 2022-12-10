@@ -117,14 +117,6 @@ def _init_updater(api_token):
     return updater
 
 
-def run_cloud_function(request, api_token):
-    if request.method == "POST":
-        updater = _init_updater(api_token)
-        update = telegram.Update.de_json(request.get_json(force=True), updater.bot)
-        updater.dispatcher.process_update(update)
-    return 'OK'
-
-
 def run_polling(api_token):
     updater = _init_updater(api_token)
 
@@ -145,3 +137,11 @@ def run_webhooks(api_token, base_url, port):
         url_path=api_token,
     )
     updater.bot.set_webhook('{}/{}'.format(base_url, api_token))
+
+
+def run_gcloud_webhook(request, api_token):
+    if request.method == "POST":
+        updater = _init_updater(api_token)
+        update = telegram.Update.de_json(request.get_json(force=True), updater.bot)
+        updater.dispatcher.process_update(update)
+    return 'OK'
