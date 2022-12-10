@@ -1,3 +1,4 @@
+import telegram
 from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler
 from telegram.ext.filters import Filters
@@ -114,6 +115,14 @@ def _init_updater(api_token):
     updater.dispatcher.add_error_handler(_error_handler)
 
     return updater
+
+
+def run_cloud_function(request, api_token):
+    if request.method == "POST":
+        updater = _init_updater(api_token)
+        update = telegram.Update.de_json(request.get_json(force=True), updater.bot)
+        updater.dispatcher.process_update(update)
+    return 'OK'
 
 
 def run_polling(api_token):
